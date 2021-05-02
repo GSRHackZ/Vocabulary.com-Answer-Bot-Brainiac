@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Vocabulary.com answer bot
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  The more questions you answer the better he will get!!
 // @author       GSRHackZZ
 // @match        https://www.vocabulary.com/*
@@ -136,6 +136,53 @@ function cleanUp(choices){
         choices[i].style.color="#36588e";
     }
 }
+
+
+
+window.addEventListener("keyup",function(){
+    let quests = document.getElementsByClassName("challenge-history")[0].children[1].children
+    let quest = document.getElementsByClassName("question")
+    let words=getWords(quest[getQuest(quests)].children[1].children[1].children[1]);
+    let empty = "No words that I know of match what you are trying to spell... 😅";
+    let result;
+    if(!words){
+        result = empty;
+    }
+    else{
+        result = words.join("<br/>");
+    }
+    let elem = document.getElementsByClassName("mode")[getQuest(quests)]
+    elem.style="";
+    elem.innerHTML=`
+        <div style='display:flex;justify-content:center;font-size:15px;padding:10px;cursor:text;background:white;overflow:auto;width:fit-content;max-width:250px;height:auto;max-height:350px;border:1px solid lightgrey;border-radius:5px;margin-right:-500px;margin-bottom:calc(height-height/2);padding:5px;color:black;box-shadow:2px 2px 5px black'>
+             ${result}
+        </div>`
+})
+
+function getWords(txtField){
+    if(txtField){
+        if(txtField.value.trim().length>0){
+            let result=[];
+            let val = txtField.value
+            for(let j=1;j<prev.length;j++){
+                if((prev[j].word).includes(val)){
+                    if(!result.includes(prev[j].word)){
+                        result.push(prev[j].word)
+                    }
+                }
+                if(prev.length-1==j){
+                    if(result.length>0){
+                        return result;
+                    }
+                    else{
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 
