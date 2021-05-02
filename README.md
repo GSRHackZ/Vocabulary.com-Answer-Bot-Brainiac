@@ -15,6 +15,7 @@ The more questions you answer the better he will get!!
 <ul style="margin-bottom:10px;">
 <li>This robot learns from your and its mistakes. The more you answer the smarter it gets! 📈</li><br>
 <li>It already knows most of the words on Vocabulary.com 🧠</li><br>
+<li>Helps you with spelling questions by showing you a list of words that match what you are trying to write. ✍</li><br>
 <li>It may answer a question wrong once in a blue moon, and if so it will learn that new question th second you click the correct answer. 😴</li><br>
 <li>This is still a work in progress, it's good and functional but it still needs some work. If you have any issues please tell me asap. 🙏</li><br>
 </ul>
