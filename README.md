@@ -18,6 +18,7 @@ The more questions you answer the better he will get!!
 <li>Helps you with spelling questions by showing you a list of words that match what you are trying to write. ✍</li><br>
 <li>It may answer a question wrong once in a blue moon, and if so it will learn that new question th second you click the correct answer. 😴</li><br>
 <li>This is still a work in progress, it's good and functional but it still needs some work. If you have any issues please tell me asap. 🙏</li><br>
+  <li>This doesn't work on quizzez at the moment but it will soon 😊</li><br>
   <li>Deleting Browser History will remove all saved words, definitions, and corrections. Please Beware!! 🛑</li><br>
 </ul>
 
