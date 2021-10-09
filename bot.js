@@ -1,135 +1,332 @@
 // ==UserScript==
-// @name         Vocabulary.com answer bot
+// @name         Vocabulary.com Answer Bot - Brainiac
 // @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  The more questions you answer the better he will get!!
-// @author       GSRHackZZ
+// @version      2.0
+// @description  The more questions you answer the smarter it will get. Features: spelling-assistance & auto - complete, definitions and examples, actively learning bot.
+// @author       GSRHackZ
 // @match        https://www.vocabulary.com/*
+// @icon         https://cdn.vocab.com/images/ach/L05-M1-tf7lsz.svg
+// @license      MIT
 // @grant        none
-// @icon         https://www.flaticon.com/svg/3309/3309130.svg
 // ==/UserScript==
 
-let dataSet = {"word":"","def":"","example":"","choices":[],"quest":"","prediction":"Unknown yet. Keep working and the robot will learn from your mistakes 😊"};
-let choiceFormat = ["A","B","C","D","Unknown yet. Keep working and the robot will learn from your mistakes 😊"]
-let prev;
+let url = window.location.href,list=url.split("/")[4],words_defs,lists,learned=[],inProgress=false;
 
-if(localStorage.getItem("prev")!==null){
-    prev=JSON.parse(localStorage.getItem("prev"))
+if(localStorage.getItem("lists")!==null){lists = JSON.parse(localStorage.getItem("lists"))}
+else{lists = []}if(localStorage.getItem("words&defs")!==null){words_defs = JSON.parse(localStorage.getItem("words&defs"))}
+else{words_defs = []}if(localStorage.getItem("learned")!==null){learned = JSON.parse(localStorage.getItem("learned"))}
+
+//console.log(list,lists,partsOfList(list,"words"),partsOfList(list,"defs"))
+
+if(!url.includes("/practice")){
+    setInterval(function(){
+        if(document.getElementsByClassName("button outline")[0]!==undefined){
+            let practice = document.getElementsByClassName("button outline")[0];
+            if(!lists.includes(list)){
+                practice.addEventListener("click",function(){
+                    let enteries = document.getElementsByClassName("entry");
+                    for(let i=0;i<enteries.length;i++){
+                        let word = enteries[i].children[0].innerText;
+                        let def = enteries[i].children[1].innerText;
+                        words_defs.push({"word":word,"def":def,"list":list});
+                        if(enteries.length-1==i){
+                            localStorage.setItem("words&defs",JSON.stringify(words_defs));
+                            lists.push(list);
+                            localStorage.setItem("lists",JSON.stringify(lists));
+                        }
+                    }
+                })
+            }
+            if(list.trim().length>0){
+                practice.click();
+            }
+        }
+    },1000)
 }
-else{
-    prev=[""]
+else if(url.includes("/practice")){
+    setTimeout(function(){
+        if(!lists.includes(list)){
+            location.href=url.split("/practice")[0];
+        }
+        else{
+            bot()
+        }
+    },250)
 }
 
-window.addEventListener("contextmenu",function(evt){
-    evt.preventDefault();
-    let questions = document.getElementsByClassName("challenge-history")[0].children[1].children
-    prepData(getQuest(questions));
-})
+function bot(){
+    let bot = setInterval(function(){
+        if(document.getElementsByClassName("challenge-history")[0].children[1].children!==undefined&&inProgress!==true){
+            let arr = document.getElementsByClassName("challenge-history")[0].children[1].children;
+            let currQuest = getQuest(arr);
+            if(currQuest!==false){
+                let questIndx = Number(currQuest.innerText-1)
+                let questBox = document.getElementsByClassName("question")[questIndx];
+                let quest_Type = questType(questBox);
+                let nxt = document.getElementsByClassName("next")[0];
+                if(quest_Type!==false){
+                    inProgress = true;
+                    if(quest_Type=="spell"){
+                        answerSpelling(questBox,questIndx);
+                    }
+                    if(quest_Type=="choice1"){
+                        answerMultChoice(questBox);
+                    }
+                    if(quest_Type=="choice2"){
+                        answerMultChoice(questBox,2);
+                    }
+                }
+                else{
+                    console.log("Question type doesn't exist 🤨");
+                    inProgress=false;
+                }
+                nxt.addEventListener("click",function(){
+                    inProgress=false;
+                    //console.log("inProgress = false!")
+                })
+            }
+        }
+    },500)
+    }
+
+function questType(quest){
+    let type=false;
+    let children = quest.children;
+    for(let i=0;i<children.length;i++){
+        if(children[i].className=="spelltheword"){
+            type = "spell"
+        }
+        if(children[i].className=="choices"){
+            if(children[1].childElementCount>0){
+                type= "choice1";
+            }
+            else if(children[1].childElementCount==0){
+                type="choice2";
+            }
+        }
+    }
+    console.log(type)
+    return type;
+}
 
 function getQuest(arr){
+    let result=false;
     for(let i=0;i<arr.length;i++){
-        if(arr[i].className.includes("selected")){
-            return Number(arr[i].innerText-1)
+        if(arr[i].classList[0]=="enabled"&&arr[i].classList[1]=="selected"&&arr[i].classList.value=="enabled selected"){
+            result = arr[i];
         }
     }
-}
-
-function prepData(quest){
-    let param = window.getSelection().toString();
-    if(param.trim().length>0){
-        let choices = document.getElementsByClassName("question")[quest].children[3].children
-        dataSet.word = param
-        dataSet.choices = choices
-        dataSet.quest=quest
-        findWord()
-    }
-}
-
-async function findWord(){
-    try{
-        dataSet.prediction=4
-        let word = dataSet.word
-        let api=`https://vocabulary.now.sh/words/${word}`;
-        let api2=`https://vocabulary.now.sh/word/${word}`;
-        let result=await fetch(api).then(data => data.json()).then(data => data.data[0]);
-        dataSet.example=await fetch(api2).then(data => data.json()).then(data => data.data);
-        dataSet.word = await result.name;
-        dataSet.def = await result.description;
-        checkChoices(dataSet.choices,1)
-        checkChoices(dataSet.choices,2)
-        let elem = document.getElementsByClassName("mode")[dataSet.quest]
-        elem.style="";
-        elem.innerHTML=`
-        <div style='cursor:text;background:white;overflow:auto;width:400px;height:auto;border:1px solid lightgrey;border-radius:5px;margin-right:-500px;margin-bottom:200px;padding:5px;color:black;box-shadow:2px 2px 5px black'>
-             ${"<strong>"+dataSet.word +"</strong> : "+ dataSet.def +"<br><br><b>Example:</b> "+ dataSet.example + "<br><br><strong>Predicted Choice: </strong>" + choiceFormat[dataSet.prediction]}
-        </div>`
-        grabChoice(dataSet.choices)
-    }
-    catch(e){
-        alert("No definition found...maybe. Refresh and try again, if the same thing happens then yeah, there is no definition.")
-        console.error(e)
-    }
+    return result;
 }
 
 
-function checkChoices(choices,mode){
-    if (mode==1){
-        for(let i=0;i<choices.length;i++){
-            if(choices[i].innerText.includes(dataSet.def)||dataSet.example.includes(choices[i].innerText)||dataSet.def.includes(choices[i].innerText)){
-                choices[i].style="color:springgreen;transition:.6s";
-                dataSet.prediction = i
+function partsOfList(listId,part){
+    let words = [];
+    let defs = [];
+    let examples = [];
+    for(let i=0;i<words_defs.length;i++){
+        if(words_defs[i].list==listId){
+            if(!words.includes(words_defs[i].word)){
+                words.push(words_defs[i].word)
+            }
+            defs.push(words_defs[i].def);
+            if(!examples.includes(words_defs[i].example)){
+                examples.push(words_defs[i].example)
+            }
+        }
+        if(words_defs.length-1==i){
+            if(part=="words"){
+                return words;
+            }
+            if(part=="defs"){
+                return defs;
+            }
+            if(part=="examples"){
+                return examples;
             }
         }
     }
-    if(mode==2){
-        for(let i=0;i<choices.length;i++){
-            for(let j=0;j<prev.length;j++){
-                if(prev[j].word==dataSet.word){
-                    if(choices[i].innerText.includes(prev[j].choice)||prev[j].choice.includes(choices[i].innerText)){
-                        cleanUp(choices)
-                        choices[i].style="color:springgreen;transition:.6s";
-                        dataSet.prediction = i
-                    }
+}
+
+function getChoices(arr){
+    let temp=[];
+    for(let i=0;i<arr.length;i++){
+        temp.push(arr[i].innerText);
+    }
+    return temp;
+}
+
+function learn(word,choice){
+    let present=false;
+    for(let i=0;i<learned.length;i++){
+        if(learned[i].word==word&&learned[i].choice==choice){
+            present=true;
+            console.log(`${word} is known 💡`)
+        }
+    }
+    if(!present){
+        learned.push({"word":word,"choice":choice});
+        localStorage.setItem("learned",JSON.stringify(learned))
+        console.log(`Learned ${word} 🧠`)
+    }
+    inProgress=false;
+}
+
+function getDef(word){
+    let def = false;
+    let words = partsOfList(list,"words");
+    let defs = partsOfList(list,"defs");
+    for(let i=0;i<words.length;i++){
+        if(words[i].includes(word)||word.includes(words[i])){
+            def = defs[i];
+        }
+    }
+    return def;
+}
+
+function defineChoices(arr){
+    for(let i=0;i<arr.length;i++){
+        if(arr[i].innerText.split(" ").length==1){
+            let def = getDef(arr[i].innerText);
+            if(def!==false){
+                arr[i].innerText += `: ${getDef(arr[i].innerText)} - (answer?)`;
+                arr[i].style.color = "springgreen";
+                arr[i].innerText+=" 🧠"
+            }
+        }
+    }
+}
+
+function answerMultChoice(questBox,clause){
+    let word,choiceBox,choices;
+    if(clause==2){
+        let chil = questBox.children[2].children;
+        if(chil.length>1){
+            for(let i=0;i<chil.length;i++){
+                if(chil[i].tagName=="STRONG"){
+                    word = chil[i].innerText
                 }
             }
         }
+        else{
+            word = questBox.children[2].children[0].innerText;
+        }
     }
-}
-
-function grabChoice(choices){
-    for(let i=0;i<choices.length;i++){
-        choices[i].addEventListener("click",function(evt){
+    else if(clause==undefined){
+        word = questBox.children[1].children[0].children[0].innerText;
+    }
+    choiceBox = questBox.children[3].children;
+    choices = getChoices(choiceBox);
+    defineChoices(choiceBox)
+    let instruct = questBox.children[2];
+    let words = partsOfList(list,"words");
+    let defs = partsOfList(list,"defs");
+    let def=false;
+    console.log()
+    deepSearch(word,questBox);
+    def = getDef(word);
+    if(def!==false){
+        let answr = false;
+        for(let i=0;i<choices.length;i++){
+            if(choices[i].includes(def)||def.includes(choices[i])){
+                answr = i;
+            }
+        }
+        if(answr!==false){
+            choiceBox[answr].style.color="springgreen";
+            choiceBox[answr].innerText+=" 🧠"
+        }
+        else{
+            answr=false;
+            if(learned.length>0){
+                for(let i=0;i<learned.length;i++){
+                    for(let j=0;j<choiceBox.length;j++){
+                        if(learned[i].word.includes(word)||choiceBox[j].innerText.includes(learned[i].choice)||learned[i].choice.includes(choiceBox[j])||word.includes(learned[i].word)){
+                            answr = learned[i].choice;
+                        }
+                    }
+                }
+            }
+            if(answr!==false){
+                for(let i=0;i<choices.length;i++){
+                    if(choices[i].includes(answr)||answr.includes(choices[i])){
+                        choiceBox[i].style.color="springgreen";
+                        choiceBox[i].innerText+=" 🧠"
+                    }
+                }
+            }
+            else{
+                //console.log("No answer found - normal way");
+            }
+        }
+    }
+    for(let i=0;i<choiceBox.length;i++){
+        choiceBox[i].addEventListener("click",function(){
             setTimeout(function(){
-                if(choices[i].className=="correct"){
-                    learn(choices[i].innerText)
-                }
-                if(!isNaN(Number(dataSet.prediction))){
-                    if(choices[dataSet.prediction].className=="incorrect"){
-                        alert("The robot has learned from it's mistake, this won't happen again. 😅")
-                        console.log("Man, I sure am dumb.... 😐")
-                    }
-                }
-            },500)
+                grabChoice(word,choiceBox);
+            },250)
         })
     }
 }
 
 
-function learn(answer){
-    let wrd = dataSet.word
-    let combo = {wrd:answer}
-    for(let i=0;i<prev.length;i++){
-        if(prev[i].combo==combo){
-            break
-        }
-        if(prev.length-1==i){
-            prev.push({"word":dataSet.word,"choice":answer,"combo":combo})
-            console.log(`${dataSet.word} has been learned!`)
-            localStorage.setItem("prev",JSON.stringify(prev));
+function grabChoice(word,choices){
+    for(let i=0;i<choices.length;i++){
+        if(choices[i].className=="correct"){
+            learn(word,choices[i].innerText);
         }
     }
 }
 
+async function deepSearch(word,questBox){
+    try{
+        let api=`https://vocabulary.now.sh/words/${word}`;
+        let api2=`https://vocabulary.now.sh/word/${word}`;
+        let result=await fetch(api).then(data => data.json()).then(data => data.data[0]);
+        let example=await fetch(api2).then(data => data.json()).then(data => data.data);
+        let def = await result.description;
+        let choiceBox = questBox.children[3].children;
+        let choices = getChoices(questBox.children[3].children);
+        let instruct = questBox.children[2];
+        let content = questBox.children[1];
+        let answr=false;
+        for(let i=0;i<choices.length;i++){
+            if(choices[i].includes(example)||choices[i].includes(def)||def.includes(choices[i])||example.includes(choices[i])){
+                answr=i;
+            }
+        }
+        if(answr!==false){
+            choiceBox[answr].style.color="springgreen";
+            choiceBox[answr].innerText+=" 🧠"
+        }
+        else{
+            //console.log("DeepSearch failed. Will add correct answer to dataSet when answered. 🤔");
+        }
+        if(getDef(word)!==false){
+            let set = false;
+            let rep = false;
+            if(content.children.length>0){
+                rep = content;
+            }
+            if(instruct.children.length>0){
+                rep = instruct;
+            }
+            if(rep!==false){
+                if(!set){
+                    set = true;
+                    rep.style.overflowY="auto";
+                    rep.style.height="125px";
+                    rep.innerHTML+=`<hr><div style="margin-top:50px;"><b style="color:black;">${word}</b> means: ${getDef(word)} 🧠 <br><br> <span style="font-size:18px; margin-bottom:10px;"><b style="color:black;">Example:</b> ${example}</span></div><br>`;
+                    questBox.style.marginTop="-45px";
+
+                }
+            }
+        }
+    }
+    catch(e){
+        return false;
+    }
+}
 
 function cleanUp(choices){
     for(let i=0;i<choices.length;i++){
@@ -137,53 +334,70 @@ function cleanUp(choices){
     }
 }
 
-
-
-window.addEventListener("keyup",function(){
-    let quests = document.getElementsByClassName("challenge-history")[0].children[1].children
-    let quest = document.getElementsByClassName("question")
-    let words=getWords(quest[getQuest(quests)].children[1].children[1].children[1]);
-    let empty = "No words that I know of match what you are trying to spell... 😅";
-    let result;
-    if(!words){
-        result = empty;
+function answerSpelling(questBox,indx){
+    let inp = questBox.children[1].children[1].children[1];
+    let submit = questBox.children[1].children[2].children[0];
+    let surrender = questBox.children[1].children[2].children[1];
+    let status = document.getElementsByClassName("status")[indx];
+    let speak = questBox.children[1].children[1].children[0];
+    let label = questBox.children[1].children[0];
+    let words = partsOfList(list,"words");
+    speak.click();
+    function auto(matches){
+        inp.value=matches[0];
+        inp.blur();
+        setTimeout(function(){
+            submit.click();
+            inProgress = false;
+        },350)
     }
-    else{
-        result = words.join("<br/>");
-    }
-    let elem = document.getElementsByClassName("mode")[getQuest(quests)]
-    elem.style="";
-    elem.innerHTML=`
-        <div style='display:flex;justify-content:center;font-size:15px;padding:10px;cursor:text;background:white;overflow:auto;width:fit-content;max-width:250px;height:auto;max-height:350px;border:1px solid lightgrey;border-radius:5px;margin-right:-500px;margin-bottom:calc(height-height/2);padding:5px;color:black;box-shadow:2px 2px 5px black'>
-             ${result}
-        </div>`
-})
-
-function getWords(txtField){
-    if(txtField){
-        if(txtField.value.trim().length>0){
-            let result=[];
-            let val = txtField.value
-            for(let j=1;j<prev.length;j++){
-                if((prev[j].word).includes(val)){
-                    if(!result.includes(prev[j].word)){
-                        result.push(prev[j].word)
-                    }
+    inp.addEventListener("keyup",function(evt){
+        if(inp.value.trim().length>0){
+            label.innerText = "Spell the word:";
+            let input = inp.value;
+            let matches=[];
+            for(let i=0;i<words.length;i++){
+                if(words[i].includes(input)||input.includes(words[i])){
+                    matches.push(words[i]);
                 }
-                if(prev.length-1==j){
-                    if(result.length>0){
-                        return result;
+            }
+            if(matches.length>0){
+                label.innerText = "Matches 😉:"
+                let max = 5;
+                if(matches.length<5){
+                    max = matches.length;
+                }
+                for(let i=0;i<max;i++){
+                    label.innerText+=" "+matches[i]+",";
+                }
+                if(matches.length==1){
+                    let auto_do = true;
+                    if(status.children.length>0){
+                        if(status.children[0].innerText.includes("again")){
+                            auto_do = false;
+                        }
                     }
-                    else{
-                        return false;
+                    if(auto_do){
+                        auto(matches);
                     }
                 }
             }
+            else{
+                label.innerText = "No matches 😟";
+            }
         }
-    }
+        else{
+            label.innerText = "Spell the word:";
+        }
+    })
+    inp.addEventListener("keydown",function(evt){
+        if(evt.keyCode==13){
+            if(inp.value.trim().length>0){
+                inProgress=false;
+            }
+        }
+    })
+    submit.addEventListener("click",function(){
+        inProgress=false;
+    })
 }
-
-
-
-
-
