@@ -17,7 +17,7 @@ The more questions you answer the smarter it will get. Features: spelling-assist
 <li>It grabs the word-list & definitions as another method of assistance. 💁‍♂️</li><br>
 <li>Helps you with spelling questions by showing you a list of words that match what you are trying to write. ✍</li><br>
 <li>It may answer a question wrong once in a blue moon, and if so it will learn that new question the second you click the correct answer. 😴</li><br>
-<li>Can make 95% accurate predictions on questions it has never seen by using grabbed wordlist and picking a word from the list. Will have <b>- answer ?</b> near these types of questions. 🎯</li><br>
+<li>Can make 95% accurate predictions on questions it has never seen by using grabbed wordlist and picking a word from the list. Will have <b>- answer ?</b> near these types of predictions. 🎯</li><br>
 <li>This doesn't work on quizzes at the moment but it will soon 😊</li><br>
 <li>Deleting Browser History will remove all saved words, definitions, and corrections. Please Beware!! 🛑</li><br>
 <li>This is still a work in progress, it's good and functional but it may still need some work. If you have any issues please contact me asap. 🙏</li><br>
