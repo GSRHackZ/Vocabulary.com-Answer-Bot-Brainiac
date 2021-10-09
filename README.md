@@ -1,25 +1,25 @@
-# Vocabulary.com-Answer-Bot 🤖
-The more questions you answer the better he will get!!
-
+<h1>Vocabulary.com Answer Bot - Brainiac 🧠</h1><br>
 
 <h3>Steps for use: </h3>
 <ol style="margin-bottom:10px;">
-<li><b>Highlight</b> word in question</li><br>
-<li><b>Right - Click</b> the word.</li><br>
-<li>Get <b>predicted</b> answer choice along with <b>definition</b> & sentence <b>example</b>.</li><br>
-<li>Enjoy!</li><br>
+<li>Install this script.</li><br>
+<li>Open a practice session for any vocabulary list.</li><br>
+<li>Get predicted answer choice along with definition & sentence example.</li><br>
+<li>Enjoy!!</li><br>
 </ol>
 
 
 <h3>Key points:</h3>
 <ul style="margin-bottom:10px;">
 <li>This robot learns from your and its mistakes. The more you answer the smarter it gets! 📈</li><br>
-<li>It already knows most of the words on Vocabulary.com 🧠</li><br>
+<li>It already knows most of the words on Vocabulary.com. 🧠</li><br>
+<li>It grabs the word-list & definitions as another method of assistance. 💁‍♂️</li><br>
 <li>Helps you with spelling questions by showing you a list of words that match what you are trying to write. ✍</li><br>
 <li>It may answer a question wrong once in a blue moon, and if so it will learn that new question the second you click the correct answer. 😴</li><br>
-<li>This is still a work in progress, it's good and functional but it still needs some work. If you have any issues please tell me asap. 🙏</li><br>
-  <li>This doesn't work on quizzez at the moment but it will soon 😊</li><br>
-  <li>Deleting Browser History will remove all saved words, definitions, and corrections. Please Beware!! 🛑</li><br>
+<li>Can make 95% accurate predictions on questions it has never seen by using grabbed wordlist and picking a word from the list. Will have <b>- answer ?</b> near these types of questions. 🎯</li><br>
+<li>This doesn't work on quizzes at the moment but it will soon 😊</li><br>
+<li>Deleting Browser History will remove all saved words, definitions, and corrections. Please Beware!! 🛑</li><br>
+<li>This is still a work in progress, it's good and functional but it may still need some work. If you have any issues please contact me asap. 🙏</li><br>
 </ul>
 
 <h3>Please consider:</h3>
