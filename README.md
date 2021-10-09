@@ -1,4 +1,5 @@
-<h1>Vocabulary.com Answer Bot - Brainiac 🧠</h1><br>
+# Vocabulary.com Answer Bot - Brainiac 🧠
+The more questions you answer the smarter it will get. Features: spelling-assistance & auto - complete, definitions and examples, actively learning bot.
 
 <h3>Steps for use: </h3>
 <ol style="margin-bottom:10px;">
