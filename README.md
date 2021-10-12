@@ -21,6 +21,7 @@ The more questions you answer the smarter it will get. Features: spelling-assist
 <li>This doesn't work on quizzes at the moment but it will soon 😊</li><br>
 <li>Deleting Browser History will remove all saved words, definitions, and corrections. Please Beware!! 🛑</li><br>
 <li>This is still a work in progress, it's good and functional but it may still need some work. If you have any issues please contact me asap. 🙏</li><br>
+<li>I do not take responsibility for any problem you get into using this script, such as getting banned or trouble in school . ⚠️ </li><br>
 </ul>
 
 <h3>Please consider:</h3>
