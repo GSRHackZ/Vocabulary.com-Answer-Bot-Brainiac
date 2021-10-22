@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Vocabulary.com Answer Bot - Brainiac
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @description  The more questions you answer the smarter it will get. Features: spelling-assistance & auto - complete, definitions and examples, actively learning bot.
 // @author       GSRHackZ
 // @match        https://www.vocabulary.com/*
@@ -52,6 +52,10 @@ else if(url.includes("/practice")){
             bot()
         }
     },250)
+}
+
+if(url.includes("/play/")){
+    bot();
 }
 
 function bot(){
@@ -222,7 +226,6 @@ function answerMultChoice(questBox,clause){
     let words = partsOfList(list,"words");
     let defs = partsOfList(list,"defs");
     let def=false;
-    console.log()
     deepSearch(word,questBox);
     def = getDef(word);
     if(def!==false){
@@ -401,3 +404,6 @@ function answerSpelling(questBox,indx){
         inProgress=false;
     })
 }
+
+
+
