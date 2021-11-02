@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Vocabulary.com Answer Bot - Brainiac
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
 // @description  The more questions you answer the smarter it will get. Features: spelling-assistance & auto - complete, definitions and examples, actively learning bot.
 // @author       GSRHackZ
 // @match        https://www.vocabulary.com/*
@@ -10,11 +10,12 @@
 // @grant        none
 // ==/UserScript==
 
-let url = window.location.href,list=url.split("/")[4],words_defs,lists,learned=[],inProgress=false;
+let url = window.location.href,list=url.split("/")[4],words_defs,lists,learned=[],incorrect=[],inProgress=false;
 
 if(localStorage.getItem("lists")!==null){lists = JSON.parse(localStorage.getItem("lists"))}
 else{lists = []}if(localStorage.getItem("words&defs")!==null){words_defs = JSON.parse(localStorage.getItem("words&defs"))}
 else{words_defs = []}if(localStorage.getItem("learned")!==null){learned = JSON.parse(localStorage.getItem("learned"))}
+if(localStorage.getItem("wrong")!==null){incorrect = JSON.parse(localStorage.getItem("wrong"))}
 
 //console.log(list,lists,partsOfList(list,"words"),partsOfList(list,"defs"))
 
@@ -188,7 +189,7 @@ function getDef(word){
     return def;
 }
 
-function defineChoices(arr){
+function defineChoices(word,arr){
     for(let i=0;i<arr.length;i++){
         if(arr[i].innerText.split(" ").length==1){
             let def = getDef(arr[i].innerText);
@@ -196,6 +197,7 @@ function defineChoices(arr){
                 arr[i].innerText += `: ${getDef(arr[i].innerText)} - (answer?)`;
                 arr[i].style.color = "springgreen";
                 arr[i].innerText+=" 🧠"
+                clean(word,arr)
             }
         }
     }
@@ -221,7 +223,7 @@ function answerMultChoice(questBox,clause){
     }
     choiceBox = questBox.children[3].children;
     choices = getChoices(choiceBox);
-    defineChoices(choiceBox)
+    defineChoices(word,choiceBox)
     let instruct = questBox.children[2];
     let words = partsOfList(list,"words");
     let defs = partsOfList(list,"defs");
@@ -238,6 +240,7 @@ function answerMultChoice(questBox,clause){
         if(answr!==false){
             choiceBox[answr].style.color="springgreen";
             choiceBox[answr].innerText+=" 🧠"
+            clean(word,choiceBox)
         }
         else{
             answr=false;
@@ -255,6 +258,7 @@ function answerMultChoice(questBox,clause){
                     if(choices[i].includes(answr)||answr.includes(choices[i])){
                         choiceBox[i].style.color="springgreen";
                         choiceBox[i].innerText+=" 🧠"
+                        clean(word,choiceBox)
                     }
                 }
             }
@@ -274,11 +278,50 @@ function answerMultChoice(questBox,clause){
 
 
 function grabChoice(word,choices){
+    let correct = false;
     for(let i=0;i<choices.length;i++){
         if(choices[i].className=="correct"){
             learn(word,choices[i].innerText);
+            correct = true;
+        }
+        if(correct){
+            if(choices[i].className!=="correct"){
+                wrong(word,choices[i].innerText)
+            }
+        }
+        else{
+            if(choices[i].className=="incorrect"){
+                wrong(word,choices[i].innerText);
+            }
         }
     }
+}
+
+
+function clean(word,choices){
+    for(let j=0;j<choices.length;j++){
+        for(let i=0;i<incorrect.length;i++){
+            if(incorrect[i].word==word&&incorrect[i].choice==choices[j].innerText){
+                choices[j].style.color="red";
+            }
+        }
+    }
+}
+
+function wrong(word,choice){
+    let present=false;
+    for(let i=0;i<incorrect.length;i++){
+        if(incorrect[i].word==word&&incorrect[i].choice==choice){
+            present=true;
+            console.log(`${word}'s choice is known as incorrect ❌`);
+        }
+    }
+    if(!present){
+        incorrect.push({"word":word,"choice":choice});
+        localStorage.setItem("wrong",JSON.stringify(incorrect))
+        console.log(`Learned ${word}'s incorrect choice 🧠`)
+    }
+    inProgress=false;
 }
 
 async function deepSearch(word,questBox){
@@ -366,12 +409,25 @@ function answerSpelling(questBox,indx){
             }
             if(matches.length>0){
                 label.innerText = "Matches 😉:"
+                let newLabel = document.createElement("div");
+                label.append(newLabel);
                 let max = 5;
                 if(matches.length<5){
                     max = matches.length;
                 }
                 for(let i=0;i<max;i++){
-                    label.innerText+=" "+matches[i]+",";
+                    newLabel.style="width:100%;height:fit-content;display:flex;align-items:center;justify-content:center;flex-direction:row;overflow:hidden;"
+                    newLabel.innerHTML+=` <p style="cursor:pointer;margin:5px;" class = "spellGuess">${matches[i]}</p>`;
+                    let guesses = document.getElementsByClassName("spellGuess");
+                    for(let i=0;i<guesses.length;i++){
+                        guesses[i].addEventListener("click",()=>{
+                            inp.value = guesses[i].innerText;
+                            setTimeout(()=>{
+                                submit.click();
+                                inProgress = false;
+                            },350)
+                        })
+                    }
                 }
                 if(matches.length==1){
                     let auto_do = true;
