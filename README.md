@@ -17,7 +17,7 @@ The more questions you answer the smarter it will get. Features: spelling-assist
 <li>It grabs the word-list & definitions as another method of assistance. 💁‍♂️</li><br>
 <li>Helps you with spelling questions by showing you a list of words that match what you are trying to write. Has autocomplete if it's certain the answer is correct ✍</li><br>
 <li>It may answer a question wrong once in a blue moon, and if so it will learn that new question the second you click the correct answer. 😴</li><br>
-<li>It constantly monitors all correct and incorrect choices for every question answered. When you reach that question or a similar one<br>it will mark all incorrect choices with red and the incorrect answer (if any) with green. 🤯</li><br>
+<li>It constantly monitors all correct and incorrect choices for every question answered. When you reach that question or a similar one<br>it will mark all incorrect choices with red and the correct answer (if any) with green. 🔴🟢</li><br>
 <li>Can make 95% accurate predictions on questions it has never seen by using grabbed wordlist and picking a word from the list. Will have <b>- answer ?</b> near these types of questions. 🎯</li><br>
 <li>This only works on quizzes and Finish Mastery mode only if you did/started a practice session first.<br>Bot will automatically open practice, so turn it off after via TamperMonkey, go to Finish Mastery or quiz and then turn it on again. 😊</li><br>
 <li>This isn't for spelling bee sessions. For that use <a href="https://github.com/GSRHackZ/Vocabulay.com-Spelling-Bot-Queen-Bee">Queen bee 🐝</a></li><br>
