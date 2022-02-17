@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Vocabulary.com Answer Bot - Brainiac
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.3
 // @description  The more questions you answer the smarter it will get. Features: spelling-assistance & auto - complete, definitions and examples, actively learning bot.
 // @author       GSRHackZ
 // @match        https://www.vocabulary.com/*
@@ -11,11 +11,11 @@
 // ==/UserScript==
 
 let url = window.location.href,list=url.split("/")[4],words_defs,lists,learned=[],incorrect=[],inProgress=false;
-
 if(localStorage.getItem("lists")!==null){lists = JSON.parse(localStorage.getItem("lists"))}
 else{lists = []}if(localStorage.getItem("words&defs")!==null){words_defs = JSON.parse(localStorage.getItem("words&defs"))}
 else{words_defs = []}if(localStorage.getItem("learned")!==null){learned = JSON.parse(localStorage.getItem("learned"))}
 if(localStorage.getItem("wrong")!==null){incorrect = JSON.parse(localStorage.getItem("wrong"))}
+let dictionary = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 
 //console.log(list,lists,partsOfList(list,"words"),partsOfList(list,"defs"))
 
@@ -229,6 +229,7 @@ function answerMultChoice(questBox,clause){
     let defs = partsOfList(list,"defs");
     let def=false;
     deepSearch(word,questBox);
+    deepDef(word,choices,choiceBox)
     def = getDef(word);
     if(def!==false){
         let answr = false;
@@ -368,6 +369,12 @@ async function deepSearch(word,questBox){
                 }
             }
         }
+        for(let i=0;i<choices.length;i++){
+            if(similarity(choices[i],def)||similarity(choices[i],example)/*||similar(def,choices[i])||similar(example,choices[i])*/){
+                choiceBox[i].style.color="springgreen";
+                choiceBox[i].innerText+=" 🧠"
+            }
+        }
     }
     catch(e){
         return false;
@@ -463,3 +470,91 @@ function answerSpelling(questBox,indx){
 
 
 
+function similarity(s1, s2) {
+    var longer = s1;
+    var shorter = s2;
+    if (s1.length < s2.length) {
+        longer = s2;
+        shorter = s1;
+    }
+    var longerLength = longer.length;
+    if (longerLength == 0) {
+        return 1.0;
+    }
+    if((longerLength - editDistance(longer, shorter)) / parseFloat(longerLength)>0.5){
+        return true;
+    }
+}
+function editDistance(s1, s2) {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+
+    var costs = new Array();
+    for (var i = 0; i <= s1.length; i++) {
+        var lastValue = i;
+        for (var j = 0; j <= s2.length; j++) {
+            if (i == 0)
+                costs[j] = j;
+            else {
+                if (j > 0) {
+                    var newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                        newValue = Math.min(Math.min(newValue, lastValue),
+                                            costs[j]) + 1;
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0)
+            costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
+}
+
+function similar(phrase,choice){
+    let simScore1 = 0;
+    let simScore2 = 0;
+    phrase = cleanPunc(phrase).split(" ");
+    choice = cleanPunc(choice).split(" ");
+    for(let i=0;i<phrase.length;i++){
+        for(let j=0;j<choice.length;j++){
+            if(phrase[i].includes(choice[j])||choice[j].includes(phrase[i])){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function cleanPunc(string){
+    return string.replace(/[^A-Za-z0-9\s]/g,"").replace(/\s{2,}/g, " ");
+}
+
+
+async function deepDef(word,choices,choiceBox){
+    let api = dictionary+word;
+    let dets = await fetch(api).then(data => data.json()).then(data=>data[0].meanings[0].definitions[0]);
+    let synms = dets.synonyms;
+    let antms = dets.antonyms;
+    let def = dets.definition;
+    for(let i=0;i<choices.length;i++){
+        for(let j=0;j<synms.length;j++){
+            if(choices[i].includes(synms[j])||synms[j].includes(choices[i])||similarity(await resDef(choices[i],1),def)|(await resDef(choices[i],2)).includes(word)){
+                choiceBox[i].style.color="springgreen";
+                choiceBox[i].innerText+=" 🧠"
+            }
+        }
+    }
+}
+
+async function resDef(word,choice){
+    let api = dictionary+word;
+    let dets = await fetch(api).then(data => data.json()).then(data=>data[0].meanings[0].definitions[0]);
+    if(choice==1){
+        return dets.definition;
+    }
+    else{
+        return dets.synonyms;
+    }
+}
