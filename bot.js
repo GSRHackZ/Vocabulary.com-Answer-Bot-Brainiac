@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Vocabulary.com Answer Bot - Brainiac
 // @namespace    http://tampermonkey.net/
-// @version      2.3
+// @version      2.5
 // @description  The more questions you answer the smarter it will get. Features: spelling-assistance & auto - complete, definitions and examples, actively learning bot.
 // @author       GSRHackZ
 // @match        https://www.vocabulary.com/*
@@ -21,14 +21,14 @@ let dictionary = "https://api.dictionaryapi.dev/api/v2/entries/en/";
 
 if(!url.includes("/practice")){
     setInterval(function(){
-        if(document.getElementsByClassName("button outline")[0]!==undefined){
-            let practice = document.getElementsByClassName("button outline")[0];
+        if(document.getElementsByClassName("activity practice")[0]!==undefined){
+            let practice = document.getElementsByClassName("activity practice")[0];
             if(!lists.includes(list)){
                 practice.addEventListener("click",function(){
                     let enteries = document.getElementsByClassName("entry");
                     for(let i=0;i<enteries.length;i++){
-                        let word = enteries[i].children[0].innerText;
-                        let def = enteries[i].children[1].innerText;
+                        let word = enteries[i].children[0].innerText.trim();
+                        let def = enteries[i].children[1].innerText.trim();
                         words_defs.push({"word":word,"def":def,"list":list});
                         if(enteries.length-1==i){
                             localStorage.setItem("words&defs",JSON.stringify(words_defs));
@@ -93,6 +93,19 @@ function bot(){
         }
     },500)
     }
+
+setInterval(()=>{
+    makeRoom();
+    if(document.getElementsByClassName("next active")[0]!==undefined){
+        document.getElementsByClassName("next active")[0].click();
+    }
+},250)
+
+function makeRoom(){
+    if(document.getElementsByClassName("vcom-challenge resizable large started")[0]!==undefined){
+        document.getElementsByClassName("vcom-challenge resizable large started")[0].style.minHeight="2500px";
+    }
+}
 
 function questType(quest){
     let type=false;
@@ -161,7 +174,7 @@ function getChoices(arr){
     return temp;
 }
 
-function learn(word,choice){
+function learn(word,choice,def){
     let present=false;
     for(let i=0;i<learned.length;i++){
         if(learned[i].word==word&&learned[i].choice==choice){
@@ -171,6 +184,9 @@ function learn(word,choice){
     }
     if(!present){
         learned.push({"word":word,"choice":choice});
+        if(choice.split(" ").length==1){
+            learned.push({"word":choice,"choice":def});
+        }
         localStorage.setItem("learned",JSON.stringify(learned))
         console.log(`Learned ${word} 🧠`)
     }
@@ -195,7 +211,7 @@ function defineChoices(word,arr){
             let def = getDef(arr[i].innerText);
             if(def!==false){
                 arr[i].innerText += `: ${getDef(arr[i].innerText)} - (answer?)`;
-                arr[i].style.color = "springgreen";
+                arr[i].style.color = "orange";
                 arr[i].innerText+=" 🧠"
                 clean(word,arr)
             }
@@ -229,8 +245,10 @@ function answerMultChoice(questBox,clause){
     let defs = partsOfList(list,"defs");
     let def=false;
     deepSearch(word,questBox);
-    deepDef(word,choices,choiceBox)
+    //deepDef(word,choices,choiceBox);
     def = getDef(word);
+    defAllChoices(choices,choiceBox,def)
+    maybe(choices,choiceBox)
     if(def!==false){
         let answr = false;
         for(let i=0;i<choices.length;i++){
@@ -248,7 +266,7 @@ function answerMultChoice(questBox,clause){
             if(learned.length>0){
                 for(let i=0;i<learned.length;i++){
                     for(let j=0;j<choiceBox.length;j++){
-                        if(learned[i].word.includes(word)||choiceBox[j].innerText.includes(learned[i].choice)||learned[i].choice.includes(choiceBox[j])||word.includes(learned[i].word)){
+                        if(learned[i].word.includes(word)||choiceBox[j].innerText.includes(learned[i].choice)||learned[i].choice.includes(choiceBox[j].innerText)||word.includes(learned[i].word)){
                             answr = learned[i].choice;
                         }
                     }
@@ -271,18 +289,18 @@ function answerMultChoice(questBox,clause){
     for(let i=0;i<choiceBox.length;i++){
         choiceBox[i].addEventListener("click",function(){
             setTimeout(function(){
-                grabChoice(word,choiceBox);
+                grabChoice(word,choiceBox,def);
             },250)
         })
     }
 }
 
 
-function grabChoice(word,choices){
+function grabChoice(word,choices,def){
     let correct = false;
     for(let i=0;i<choices.length;i++){
         if(choices[i].className=="correct"){
-            learn(word,choices[i].innerText);
+            learn(word,choices[i].innerText,def);
             correct = true;
         }
         if(correct){
@@ -362,7 +380,7 @@ async function deepSearch(word,questBox){
                 if(!set){
                     set = true;
                     rep.style.overflowY="auto";
-                    rep.style.height="125px";
+                    rep.style.height="fit-content";
                     rep.innerHTML+=`<hr><div style="margin-top:50px;"><b style="color:black;">${word}</b> means: ${getDef(word)} 🧠 <br><br> <span style="font-size:18px; margin-bottom:10px;"><b style="color:black;">Example:</b> ${example}</span></div><br>`;
                     questBox.style.marginTop="-45px";
 
@@ -378,6 +396,19 @@ async function deepSearch(word,questBox){
     }
     catch(e){
         return false;
+    }
+}
+
+function maybe(choices,choiceBox){
+    for(let i=0;i<choices.length;i++){
+        for(let j=0;j<learned.length;j++){
+            if(choices[i].toLowerCase().includes(learned[j].word.toLowerCase())||learned[j].word.toLowerCase().includes(choices[i].toLowerCase())){
+                if(!choiceBox[i].innerText.includes(" - maybe this...")){
+                    choiceBox[i].innerText+=" - maybe this...";
+                    choiceBox[i].style.color="orange";
+                }
+            }
+        }
     }
 }
 
@@ -410,7 +441,7 @@ function answerSpelling(questBox,indx){
             let input = inp.value;
             let matches=[];
             for(let i=0;i<words.length;i++){
-                if(words[i].includes(input)||input.includes(words[i])){
+                if(words[i].toLowerCase().includes(input.toLowerCase())||input.toLowerCase().includes(words[i].toLowerCase())){
                     matches.push(words[i]);
                 }
             }
@@ -531,30 +562,55 @@ function cleanPunc(string){
     return string.replace(/[^A-Za-z0-9\s]/g,"").replace(/\s{2,}/g, " ");
 }
 
-
+/*
 async function deepDef(word,choices,choiceBox){
-    let api = dictionary+word;
-    let dets = await fetch(api).then(data => data.json()).then(data=>data[0].meanings[0].definitions[0]);
-    let synms = dets.synonyms;
-    let antms = dets.antonyms;
-    let def = dets.definition;
+    try{
+        let api = dictionary+word;
+        let dets = await fetch(api).then(data => data.json()).then(data=>data[0].meanings[0].definitions[0]);
+        let synms = dets.synonyms;
+        let antms = dets.antonyms;
+        let def = dets.definition;
+        for(let i=0;i<choices.length;i++){
+            for(let j=0;j<synms.length;j++){
+                if(choices[i].includes(synms[j])||synms[j].includes(choices[i])){
+                    choiceBox[i].style.color="springgreen";
+                    choiceBox[i].innerText+=" 🧠"
+                }
+            }
+        }
+    }
+    catch(error){
+        console.log("Can't find synonyms for this one. Not a big problem, I have other ways of dealing with this 😊")
+    }
+}
+*/
+
+async function defAllChoices(choices,choiceBox,def){
     for(let i=0;i<choices.length;i++){
-        for(let j=0;j<synms.length;j++){
-            if(choices[i].includes(synms[j])||synms[j].includes(choices[i])||similarity(await resDef(choices[i],1),def)|(await resDef(choices[i],2)).includes(word)){
-                choiceBox[i].style.color="springgreen";
-                choiceBox[i].innerText+=" 🧠"
+        if(choices[i].split(" ").length==1){
+            let api = dictionary+choices[i];
+            let defs = await fetch(api).then(data => data.json()).then(data=>data[0].meanings[0].definitions);
+            let temp=[];
+            for(let j=0;j<defs.length;j++){
+                if(defs[j]!==undefined){
+                    temp.push(defs[j].definition);
+                }
+            }
+            for(let x=0;x<temp.length;x++){
+                choiceBox[i].innerText+=` - ${temp[x]}`;
             }
         }
     }
 }
 
-async function resDef(word,choice){
-    let api = dictionary+word;
-    let dets = await fetch(api).then(data => data.json()).then(data=>data[0].meanings[0].definitions[0]);
-    if(choice==1){
-        return dets.definition;
-    }
-    else{
-        return dets.synonyms;
-    }
-}
+
+
+
+
+
+
+
+
+
+
+
